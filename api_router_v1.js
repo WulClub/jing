@@ -1,5 +1,5 @@
 var express           = require('express');
-var sign = require('./controllers/sign');
+var sign = require('./api/v1/sign');
 var topicController   = require('./api/v1/topic');
 var topicCollectController   = require('./api/v1/topic_collect');
 var userController    = require('./api/v1/user');
