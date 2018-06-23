@@ -32,21 +32,56 @@ var index = function (req, res, next) {
   var options = { skip: (page - 1) * limit, limit: limit, sort: '-top -last_reply_at'};
 
   var ep = new eventproxy();
+  var fullTopics=[];
   ep.fail(next);
 
   TopicModel.find(query, '', options, ep.done('topics'));
 
   ep.all('topics', function (topics) {
-    topics.forEach(function (topic) {
-      UserModel.findById(topic.author_id, ep.done(function (author) {
+    topics.forEach(function (perTopic) {
+      /*UserModel.findById(topic.author_id, ep.done(function (author) {
         if (mdrender) {
           topic.content = renderHelper.markdown(at.linkUsers(topic.content));
         }
         topic.author = _.pick(author, ['loginname', 'avatar_url']);
         ep.emit('author');
-      }));
-    });
+      }));*/
+        TopicProxy.getFullTopic(perTopic._id, ep.done(function (msg, topic, author, replies) {
+            if (!topic) {
+                res.status(404);
+                return res.send({success: false, error_msg: '话题不存在'+JSON.stringify(perTopic)});
+            }
+            topic = _.pick(topic, ['id', 'author_id', 'tab', 'content', 'title', 'last_reply_at',
+                'good', 'top', 'reply_count', 'visit_count', 'create_at', 'author']);
 
+            if (mdrender) {
+                topic.content = renderHelper.markdown(at.linkUsers(topic.content));
+            }
+            topic.author = _.pick(author, ['loginname', 'avatar_url']);
+
+            topic.replies = replies.map(function (reply) {
+                if (mdrender) {
+                    reply.content = renderHelper.markdown(at.linkUsers(reply.content));
+                }
+                reply.author = _.pick(reply.author, ['loginname', 'avatar_url']);
+                reply =  _.pick(reply, ['id', 'author', 'content', 'ups', 'create_at', 'reply_id']);
+                reply.reply_id = reply.reply_id || null;
+
+                if (reply.ups && req.user && reply.ups.indexOf(req.user.id) != -1) {
+                    reply.is_uped = true;
+                } else {
+                    reply.is_uped = false;
+                }
+
+                return reply;
+            });
+            fullTopics.push(topic);
+            ep.emit('full_topics');
+        }));
+
+
+    });
+/*
     ep.after('author', topics.length, function () {
       topics = topics.map(function (topic) {
         return _.pick(topic, ['id', 'author_id', 'tab', 'content', 'title', 'last_reply_at',
@@ -54,7 +89,12 @@ var index = function (req, res, next) {
       });
 
       res.send({success: true, data: topics});
-    });
+    });*/
+
+      ep.after('full_topics', topics.length, function () {
+         console.log("哈哈哈啊")
+          res.send({success: true, data: fullTopics});
+      })
   });
 };
 
