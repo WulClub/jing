@@ -15,7 +15,7 @@ if (!config.debug && config.oneapm_key) {
 require('colors');
 var path = require('path');
 var Loader = require('loader');
-var LoaderConnect = require('loader-connect')
+// var LoaderConnect = require('loader-connect')
 var express = require('express');
 var session = require('express-session');
 var passport = require('passport');
@@ -78,9 +78,9 @@ if (config.debug) {
 }
 
 // 静态资源
-if (config.debug) {
-  app.use(LoaderConnect.less(__dirname)); // 测试环境用，编译 .less on the fly
-}
+// if (config.debug) {
+//   app.use(LoaderConnect.less(__dirname)); // 测试环境用，编译 .less on the fly
+// }
 
 app.use('/agent', proxyMiddleware.proxy);
 
